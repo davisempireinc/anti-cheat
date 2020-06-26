@@ -36,8 +36,17 @@ forward OnAnticheatCheck();
 public OnAnticheatCheck()
 {
 	// Checking happens here.
+	// Call the OnAnticheatDetect() with the defined preprocessor ID for the cheat.
 	return 1;
 }
+
+#if !defined OnAnticheatDetect
+	forward OnAnticheatDetect(playerid, cheatid);
+	public OnAnticheatDetect(playerid, cheatid)
+	{
+		return 1;
+	}
+#endif
 
 
 // Functions here...
