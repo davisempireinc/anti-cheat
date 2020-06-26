@@ -6,13 +6,18 @@
 	and the string inside the array, the index of the specified cheat must be the same ID as the defined preprocessor ID.
 */
 
-#define AC_CHEAT_MONEY	0
+#define AC_CHEAT_MONEY	      0
+#define AC_CHEAT_WEAPONS 			1
 
 new AC_timer;
 new AC_names[][] =
 {
-	"Money Hack"// Add the string for the cheat here.
+	"Money Hack",
+	"Weapon/Ammo hacks"
 };
+
+// Create your variables here.
+new PlayerWeapons[MAX_PLAYERS][12][2];
 
 // Create your variables here.
 
@@ -37,6 +42,50 @@ public AC_OnGameModeExit()
 	return 1;
 }
 
+forward OnAnticheatCheck();
+public OnAnticheatCheck()
+{
+	// Checking happens here.
+	// Call the OnAnticheatDetect() with the defined preprocessor ID for the cheat.
+
+	new weapon, ammo;
+	for(new i = 0; i < 12; i++)
+	{
+		GetPlayerWeaponData(playerid, i, weapon, ammo);
+		if(PlayerWeapons[playerid][i][0] != weapon || PlayerWeapons[playerid][i][1] != ammo)
+		{
+			OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
+		}
+	}
+	if(AC_Info [playerid][player_money] != -1) 
+	{ 
+		if (GetPlayerMoney (playerid) != AC_Info [playerid][player_money])
+		{
+			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
+		}
+	}
+	return 1;
+}
+
+#if !defined OnAnticheatDetect
+  forward OnAnticheatDetect(playerid, cheatid);
+  public OnAnticheatDetect(playerid, cheatid)
+  {
+    return 1;
+  }
+#endif
+
+forward AC_OnPlayerConnect(playerid);
+public AC_OnPlayerConnect(playerid)
+{
+	// Resetting the Server-sided weapons.
+	for(new i = 0; i < 12; i++)
+	{
+		PlayerWeapons[playerid][i][0] = 0;
+		PlayerWeapons[playerid][i][1] = 0;
+	}
+	return 1;
+}
 forward AC_OnPlayerDisconnect (playerid, reason);
 public AC_OnPlayerDisconnect (playerid, reason)
 {
@@ -44,42 +93,7 @@ public AC_OnPlayerDisconnect (playerid, reason)
 	return 1;
 }
 
-forward OnAnticheatCheck();
-public OnAnticheatCheck()
-{
-	// Checking happens here.
-	// Call the OnAnticheatDetect() with the defined preprocessor ID for the cheat.
-
-	if (AC_Info [playerid][player_money] != -1) 
-	{ 
-		if (GetPlayerMoney (playerid) != AC_Info [playerid][player_money])
-		{
-			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
-		}
-	}
-
-	return 1;
-}
-
-#if !defined OnAnticheatDetect
-
-forward OnAnticheatDetect(playerid, cheatid);
-public OnAnticheatDetect(playerid, cheatid)
-{
-	switch (cheatid)
-	{
-		case AC_CHEAT_MONEY:
-		{
-			SetPlayerMoney (playerid, AC_Info [playerid][player_money]);
-			// Do extra stuff if you want 
-		}
-	}
-	return 1;
-}
-
-#endif
-
-
+// Functions here...
 stock GivePlayerMoneyEx (playerid, money)
 {
 
@@ -90,5 +104,10 @@ stock GivePlayerMoneyEx (playerid, money)
 	return 1;
 }
 
-
-// Functions here...
+stock GivePlayerWeaponEx(playerid, weapon, ammo)
+{
+	PlayerWeapons[playerid][i][0] = weapon;
+	PlayerWeapons[playerid][i][1] = ammo;
+	GivePlayerWeapon(playerid, weapon, ammo);
+	return 1;
+}
