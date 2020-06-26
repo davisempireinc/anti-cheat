@@ -2,8 +2,18 @@
 	Make functions that sets the values both server side and client side.
 
 	You're able to create hooks for any event listener. E.g: AC_OnPlayerConnect.
+
+	Please define the ID and string equivilent of the cheat. E.g
+	#define AC_CHEAT_HEALTH			0
+
+	and the string inside the array, the index of the specified cheat must be the same ID as the defined preprocessor ID.
 */
+
 new AC_timer;
+new AC_names[][] =
+{
+	// Add the string for the cheat here.
+} 
 
 // Create your variables here.
 
