@@ -19,8 +19,6 @@ new AC_names[][] =
 // Create your variables here.
 new PlayerWeapons[MAX_PLAYERS][12][2];
 
-// Create your variables here.
-
 enum ac_data
 {
 	player_money
