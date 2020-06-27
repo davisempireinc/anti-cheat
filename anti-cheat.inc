@@ -1,3 +1,4 @@
+
 /*
 	Make functions that sets the values both server side and client side.
 	Please define the ID and string equivilent of the cheat. E.g
@@ -9,6 +10,8 @@
 #define AC_CHEAT_MONEY	      		0
 #define AC_CHEAT_WEAPONS 			1
 #define AC_CHEAT_HEALTH_ARMOR		2
+
+forward OnAnticheatDetect(playerid, cheatid);
 
 new AC_timer; // Holds the timer for the Anti-cheat checking function.
 new AC_names[][] = // Holds names for the Anti-cheat.
@@ -47,36 +50,30 @@ public OnAnticheatCheck()
 
 	new weapon, ammo, Float:health, Float:armor; // Used to get weapon data.
 
-	GetPlayerHealth(playerid, health); // Gets client-side health.
-	GetPlayerArmour(playerid, armor); // Gets client-side armor.
+	for(new playerid = 0; playerid < MAX_PLAYERS; playerid++)
+	{
+		GetPlayerHealth(playerid, health); // Gets client-side health.
+		GetPlayerArmour(playerid, armor); // Gets client-side armor.
 
-	for(new i = 0; i < 12; i++)
-	{
-		GetPlayerWeaponData(playerid, i, weapon, ammo); // Gets the client-sided weapon.
-		if(PlayerWeapons[playerid][i][0] != weapon || PlayerWeapons[playerid][i][1] != ammo) // If the client-side and server-side doesn't match...
+		for(new j = 0; j < 12; j++)
 		{
-			OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
+			GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
+			if(PlayerWeapons[playerid][j][0] != weapon || PlayerWeapons[playerid][j][1] != ammo) // If the client-side and server-side doesn't match...
+			{
+				OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
+			}
 		}
-	}
-	if(PlayerHealth[playerid] != health && PlayerArmor[playerid] != armor)
-	{
-		OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR)
-	}
-	if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
-	{
-		OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
+		if(PlayerHealth[playerid] != health && PlayerArmor[playerid] != armor)
+		{
+			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
+		}
+		if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
+		{
+			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
+		}
 	}
 	return 1;
 }
-
-// Used as a place holder incase one didn't create his own implementation of OnAnticheatDetect().
-forward OnAnticheatDetect(playerid, cheatid);
-#if !defined OnAnticheatDetect
-	public OnAnticheatDetect(playerid, cheatid)
-	{
-		return 1;
-	}
-#endif
 
 /*
 	Server events.
@@ -86,10 +83,10 @@ forward AC_OnPlayerConnect(playerid);
 public AC_OnPlayerConnect(playerid)
 {
 	// Resetting the Server-sided weapons.
-	for(new i = 0; i < 12; i++)
+	for(new slot = 0; slot < 12; slot++)
 	{
-		PlayerWeapons[playerid][i][0] = 0;
-		PlayerWeapons[playerid][i][1] = 0;
+		PlayerWeapons[playerid][slot][0] = 0;
+		PlayerWeapons[playerid][slot][1] = 0;
 	}
 	PlayerMoney[playerid] = 0; // Sets the player server-sided money to 0.
 
@@ -108,7 +105,7 @@ public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypar
 	{
 		PlayerArmor[playerid] = 0.0;
 
-		new hamount = amount - armor;
+		new Float:hamount = amount - armor;
 		PlayerHealth[playerid] = hamount;
 	}
 	else PlayerArmor[playerid] = armor - amount;
@@ -130,8 +127,27 @@ stock GivePlayerMoneyEx (playerid, money)
 // Weapons
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
 {
-	PlayerWeapons[playerid][i][0] = weapon;
-	PlayerWeapons[playerid][i][1] = ammo;
+	stock GetWeaponSlot(weaponid)
+{
+	new slot;
+	switch(weapon)
+	{
+		case 0,1: slot = 0;
+		case 2 .. 9: slot = 1;
+		case 10 .. 15: slot = 10;
+		case 16 .. 18, 39: slot = 8;
+		case 22 .. 24: slot =2;
+		case 25 .. 27: slot = 3;
+		case 28, 29, 32: slot = 4;
+		case 30, 31: slot = 5;
+		case 33, 34: slot = 6;
+		case 35 .. 38: slot = 7;
+		case 40: slot = 12;
+		case 41 .. 43: slot = 9;
+		case 44 .. 46: slot = 11;
+	}
+	PlayerWeapons[playerid][slot][0] = weapon;
+	PlayerWeapons[playerid][slot][1] = ammo;
 	GivePlayerWeapon(playerid, weapon, ammo);
 	return 1;
 }
