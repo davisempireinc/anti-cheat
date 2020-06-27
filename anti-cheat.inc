@@ -63,7 +63,7 @@ public OnAnticheatCheck()
 				OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
 			}
 		}
-		if(PlayerHealth[playerid] != health && PlayerArmor[playerid] != armor)
+		if(PlayerHealth[playerid] != health || PlayerArmor[playerid] != armor)
 		{
 			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
 		}
