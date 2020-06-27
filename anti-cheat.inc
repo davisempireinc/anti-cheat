@@ -67,9 +67,12 @@ public OnAnticheatCheck()
 		{
 			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
 		}
-		if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
+		if(PlayerMoney[playerid] != 0)
 		{
-			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
+			if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
+			{
+				OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
+			}
 		}
 	}
 	return 1;
@@ -126,8 +129,6 @@ stock GivePlayerMoneyEx (playerid, money)
 
 // Weapons
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
-{
-	stock GetWeaponSlot(weaponid)
 {
 	new slot;
 	switch(weapon)
