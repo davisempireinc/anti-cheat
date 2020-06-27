@@ -1,25 +1,29 @@
 /*
 	Make functions that sets the values both server side and client side.
-	You're able to create hooks for any event listener. E.g: AC_OnPlayerConnect.
 	Please define the ID and string equivilent of the cheat. E.g
-	#define AC_CHEAT_HEALTH			0
+	#define AC_CHEAT_HEALTH_ARMOR		0
 	and the string inside the array, the index of the specified cheat must be the same ID as the defined preprocessor ID.
 */
 // Defining cheat ID's
 
-#define AC_CHEAT_MONEY	      0
+#define AC_CHEAT_MONEY	      		0
 #define AC_CHEAT_WEAPONS 			1
+#define AC_CHEAT_HEALTH_ARMOR		2
 
 new AC_timer; // Holds the timer for the Anti-cheat checking function.
 new AC_names[][] = // Holds names for the Anti-cheat.
 {
-	"Money Hack",
-	"Weapon/Ammo hacks"
+	"Money hack",
+	"Weapon/Ammo hack",
+	"Health/Armor hack"
 };
 
 // Server-sided variables.
 new PlayerWeapons[MAX_PLAYERS][12][2]; // Server-sided player weapons
 new PlayerMoney [MAX_PLAYERS]; // Server-sided player money.
+
+new Float:PlayerHealth[MAX_PLAYERS]; // Server-sided player weapons
+new Float:PlayerArmor[MAX_PLAYERS]; // Server-sided player health.
 
 forward AC_OnGameModeInit();
 public AC_OnGameModeInit()
@@ -41,7 +45,11 @@ public OnAnticheatCheck()
 	// Checking happens here.
 	// Calls the OnAnticheatDetect() with the defined preprocessor ID for the cheat.
 
-	new weapon, ammo; // Used to get weapon data.
+	new weapon, ammo, Float:health, Float:armor; // Used to get weapon data.
+
+	GetPlayerHealth(playerid, health); // Gets client-side health.
+	GetPlayerArmour(playerid, armor); // Gets client-side armor.
+
 	for(new i = 0; i < 12; i++)
 	{
 		GetPlayerWeaponData(playerid, i, weapon, ammo); // Gets the client-sided weapon.
@@ -49,6 +57,10 @@ public OnAnticheatCheck()
 		{
 			OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
 		}
+	}
+	if(PlayerHealth[playerid] != health && PlayerArmor[playerid] != armor)
+	{
+		OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR)
 	}
 	if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
 	{
@@ -66,7 +78,10 @@ forward OnAnticheatDetect(playerid, cheatid);
 	}
 #endif
 
-// Anti-cheat connect event.
+/*
+	Server events.
+	You're able to create hooks for any event listener. E.g: AC_OnPlayerConnect.
+*/
 forward AC_OnPlayerConnect(playerid);
 public AC_OnPlayerConnect(playerid)
 {
@@ -77,27 +92,60 @@ public AC_OnPlayerConnect(playerid)
 		PlayerWeapons[playerid][i][1] = 0;
 	}
 	PlayerMoney[playerid] = 0; // Sets the player server-sided money to 0.
+
+	PlayerHealth[playerid] = 100.0;
+	PlayerHealth[playerid] = 0.0;
 	return 1;
 }
-
-// Anti-cheat disconnect event.
-forward AC_OnPlayerDisconnect(playerid, reason);
-public AC_OnPlayerDisconnect(playerid, reason)
+forward AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart);
+public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart)
 {
+	new Float:armor, Float:health;
+	GetPlayerArmour(playerid, armor);
+	GetPlayerHealth(playerid, health);
+
+	if(armor < amount)
+	{
+		PlayerArmor[playerid] = 0.0;
+
+		new hamount = amount - armor;
+		PlayerHealth[playerid] = hamount;
+	}
+	else PlayerArmor[playerid] = armor - amount;
 	return 1;
 }
 
-// Functions here...
+/*
+	Functions needed for each Anti-cheat.
+*/
+
+// Money
 stock GivePlayerMoneyEx (playerid, money) 
 {
 	PlayerMoney [playerid] += money;
 	GivePlayerMoney (playerid, money);
 	return 1;
 }
+
+// Weapons
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
 {
 	PlayerWeapons[playerid][i][0] = weapon;
 	PlayerWeapons[playerid][i][1] = ammo;
 	GivePlayerWeapon(playerid, weapon, ammo);
+	return 1;
+}
+
+// Health/Armor
+stock SetPlayerHealthEx(playerid, Float:health)
+{
+	SetPlayerHealth(playerid, health);
+	PlayerHealth[playerid] = health;
+	return 1;
+}
+stock SetPlayerArmorEx(playerid, Float:armor)
+{
+	SetPlayerArmour(playerid, armor);
+	PlayerArmor[playerid] = armor;
 	return 1;
 }
