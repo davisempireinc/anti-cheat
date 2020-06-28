@@ -22,13 +22,13 @@ new AC_names[][] = // Holds names for the Anti-cheat.
 };
 
 // Server-sided variables.
+new IsDead[MAX_PLAYERS];
+
 new PlayerWeapons[MAX_PLAYERS][12][2]; // Server-sided player weapons
 new PlayerMoney [MAX_PLAYERS]; // Server-sided player money.
 
 new Float:PlayerHealth[MAX_PLAYERS]; // Server-sided player weapons
 new Float:PlayerArmor[MAX_PLAYERS]; // Server-sided player health.
-
-new IsDead[MAX_PLAYERS];
 
 forward AC_OnGameModeInit();
 public AC_OnGameModeInit()
@@ -62,12 +62,9 @@ public OnAnticheatCheck()
 		{
 			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
 		}
-		else if(PlayerMoney[playerid] != 0)
+		if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
 		{
-			if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
-			{
-				OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
-			}
+			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
 		}
 		else 
 		{
@@ -147,10 +144,17 @@ public AC_OnPlayerSpawn(playerid)
 // Money
 stock GivePlayerMoneyEx (playerid, money) 
 {
-	PlayerMoney [playerid] += money;
+	PlayerMoney[playerid] += money;
 	GivePlayerMoney (playerid, money);
 	return 1;
 }
+stock SetPlayerMoney(playerid, money) 
+{
+	PlayerMoney[playerid] = money;
+	GivePlayerMoney(playerid, money - GetPlayerMoney(playerid));
+	return 1;
+}
+
 
 // Weapons
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
