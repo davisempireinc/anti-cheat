@@ -30,6 +30,29 @@ new PlayerMoney [MAX_PLAYERS]; // Server-sided player money.
 new Float:PlayerHealth[MAX_PLAYERS]; // Server-sided player weapons
 new Float:PlayerArmor[MAX_PLAYERS]; // Server-sided player health.
 
+
+GetWeaponSlot(weaponid)
+{
+	new slot;
+	switch(weaponid)
+	{
+		case 0,1: slot = 0;
+		case 2 .. 9: slot = 1;
+		case 10 .. 15: slot = 10;
+		case 16 .. 18, 39: slot = 8;
+		case 22 .. 24: slot =2;
+		case 25 .. 27: slot = 3;
+		case 28, 29, 32: slot = 4;
+		case 30, 31: slot = 5;
+		case 33, 34: slot = 6;
+		case 35 .. 38: slot = 7;
+		case 40: slot = 12;
+		case 41 .. 43: slot = 9;
+		case 44 .. 46: slot = 11;
+	}
+	return slot;
+}
+
 forward AC_OnGameModeInit();
 public AC_OnGameModeInit()
 {
@@ -54,7 +77,8 @@ public OnAnticheatCheck()
 
 	for(new playerid = 0; playerid < MAX_PLAYERS; playerid++)
 	{
-		if(IsDead[playerid] != 1) continue;
+		if(IsDead[playerid] == 1 || GetPVarInt(playerid, "ready") != 1) continue;
+
 		GetPlayerHealth(playerid, health); // Gets client-side health.
 		GetPlayerArmour(playerid, armor); // Gets client-side armor.
 
@@ -120,6 +144,13 @@ public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypar
 	else PlayerArmor[playerid] = armor - amount;
 	return 1;
 }
+forward AC_OnPlayerWeaponShot(playerid, weaponid);
+public AC_OnPlayerWeaponShot(playerid, weaponid)
+{
+	new slot = GetWeaponSlot(weaponid);
+	PlayerWeapons[playerid][slot][1]--;
+	return 1;
+}
 
 forward AC_OnPlayerDeath(playerid);
 public AC_OnPlayerDeath(playerid)
@@ -159,26 +190,20 @@ stock SetPlayerMoney(playerid, money)
 // Weapons
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
 {
-	new slot;
-	switch(weapon)
-	{
-		case 0,1: slot = 0;
-		case 2 .. 9: slot = 1;
-		case 10 .. 15: slot = 10;
-		case 16 .. 18, 39: slot = 8;
-		case 22 .. 24: slot =2;
-		case 25 .. 27: slot = 3;
-		case 28, 29, 32: slot = 4;
-		case 30, 31: slot = 5;
-		case 33, 34: slot = 6;
-		case 35 .. 38: slot = 7;
-		case 40: slot = 12;
-		case 41 .. 43: slot = 9;
-		case 44 .. 46: slot = 11;
-	}
+	new slot = GetWeaponSlot(weapon);
 	PlayerWeapons[playerid][slot][0] = weapon;
 	PlayerWeapons[playerid][slot][1] = ammo;
 	GivePlayerWeapon(playerid, weapon, ammo);
+	return 1;
+}
+stock ResetPlayerWeaponsEx(playerid)
+{
+	ResetPlayerWeapons(playerid);
+	for(new slot = 0; slot < 12; slot++)
+	{
+		PlayerWeapons[playerid][slot][0] = 0;
+		PlayerWeapons[playerid][slot][1] = 0;
+	}
 	return 1;
 }
 
