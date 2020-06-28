@@ -28,6 +28,8 @@ new PlayerMoney [MAX_PLAYERS]; // Server-sided player money.
 new Float:PlayerHealth[MAX_PLAYERS]; // Server-sided player weapons
 new Float:PlayerArmor[MAX_PLAYERS]; // Server-sided player health.
 
+new IsDead[MAX_PLAYERS];
+
 forward AC_OnGameModeInit();
 public AC_OnGameModeInit()
 {
@@ -52,26 +54,30 @@ public OnAnticheatCheck()
 
 	for(new playerid = 0; playerid < MAX_PLAYERS; playerid++)
 	{
+		if(IsDead[playerid] != 1) continue;
 		GetPlayerHealth(playerid, health); // Gets client-side health.
 		GetPlayerArmour(playerid, armor); // Gets client-side armor.
 
-		for(new j = 0; j < 12; j++)
-		{
-			GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
-			if(PlayerWeapons[playerid][j][0] != weapon || PlayerWeapons[playerid][j][1] != ammo) // If the client-side and server-side doesn't match...
-			{
-				OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
-			}
-		}
 		if(PlayerHealth[playerid] != health || PlayerArmor[playerid] != armor)
 		{
 			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
 		}
-		if(PlayerMoney[playerid] != 0)
+		else if(PlayerMoney[playerid] != 0)
 		{
 			if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
 			{
 				OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
+			}
+		}
+		else 
+		{
+			for(new j = 0; j < 12; j++)
+			{
+				GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
+				if(PlayerWeapons[playerid][j][0] != weapon || PlayerWeapons[playerid][j][1] != ammo) // If the client-side and server-side doesn't match...
+				{
+					OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
+				}
 			}
 		}
 	}
@@ -95,8 +101,11 @@ public AC_OnPlayerConnect(playerid)
 
 	PlayerHealth[playerid] = 100.0;
 	PlayerHealth[playerid] = 0.0;
+
+	IsDead[playerid] = 0;
 	return 1;
 }
+
 forward AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart);
 public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart)
 {
@@ -115,6 +124,22 @@ public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypar
 	return 1;
 }
 
+forward AC_OnPlayerDeath(playerid);
+public AC_OnPlayerDeath(playerid)
+{
+	IsDead[playerid] = 1;
+	return 1;
+}
+
+forward AC_OnPlayerSpawn(playerid);
+public AC_OnPlayerSpawn(playerid)
+{
+	if(IsDead[playerid] == 1)
+	{
+		IsDead[playerid] = 0;
+	}
+	return 1;
+}
 /*
 	Functions needed for each Anti-cheat.
 */
