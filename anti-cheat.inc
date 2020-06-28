@@ -24,8 +24,8 @@ new AC_names[][] = // Holds names for the Anti-cheat.
 // Server-sided variables.
 new IsDead[MAX_PLAYERS];
 
-new PlayerWeapons[MAX_PLAYERS][12][2]; // Server-sided player weapons
 new PlayerMoney [MAX_PLAYERS]; // Server-sided player money.
+new PlayerWeapons[MAX_PLAYERS][12][2]; // Server-sided player weapons
 
 new Float:PlayerHealth[MAX_PLAYERS]; // Server-sided player weapons
 new Float:PlayerArmor[MAX_PLAYERS]; // Server-sided player health.
@@ -83,14 +83,13 @@ public OnAnticheatCheck()
 		GetPlayerHealth(playerid, health); // Gets client-side health.
 		GetPlayerArmour(playerid, armor); // Gets client-side armor.
 
-		printf("%f %f", velX, velY);
-
 		if(PlayerHealth[playerid] != health || PlayerArmor[playerid] != armor)
 		{
 			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
 		}
 		if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
 		{
+			printf("%i %i", GetPlayerMoney (playerid), PlayerMoney[playerid]);
 			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
 		}
 		for(new j = 0; j < 12; j++)
@@ -119,7 +118,7 @@ public AC_OnPlayerConnect(playerid)
 		PlayerWeapons[playerid][slot][0] = 0;
 		PlayerWeapons[playerid][slot][1] = 0;
 	}
-	PlayerMoney[playerid] = 0; // Sets the player server-sided money to 0.
+	PlayerMoney[playerid] = 0;
 
 	PlayerHealth[playerid] = 100.0;
 	PlayerHealth[playerid] = 0.0;
@@ -135,13 +134,8 @@ public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypar
 	GetPlayerArmour(playerid, armor);
 	GetPlayerHealth(playerid, health);
 
-	if(armor < amount)
-	{
-		new Float:hamount = amount - armor;
-		SetPlayerArmorEx(playerid, 0.0);
-		SetPlayerHealthEx(playerid, hamount);
-	}
-	else SetPlayerArmorEx(playerid, armor - amount);
+	PlayerHealth[playerid] = health;
+	PlayerArmor[playerid] = armor;
 	return 1;
 }
 forward AC_OnPlayerWeaponShot(playerid, weaponid);
@@ -177,12 +171,6 @@ stock GivePlayerMoneyEx (playerid, money)
 {
 	PlayerMoney[playerid] += money;
 	GivePlayerMoney (playerid, money);
-	return 1;
-}
-stock SetPlayerMoney(playerid, money) 
-{
-	PlayerMoney[playerid] = money;
-	GivePlayerMoney(playerid, money - GetPlayerMoney(playerid));
 	return 1;
 }
 
