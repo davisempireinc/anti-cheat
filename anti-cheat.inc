@@ -73,7 +73,8 @@ public OnAnticheatCheck()
 	// Checking happens here.
 	// Calls the OnAnticheatDetect() with the defined preprocessor ID for the cheat.
 
-	new weapon, ammo, Float:health, Float:armor; // Used to get weapon data.
+	new weapon, ammo;// Used to get weapon data.
+	new Float:health, Float:armor; // Used to get client-side health & armor.
 
 	for(new playerid = 0; playerid < MAX_PLAYERS; playerid++)
 	{
@@ -81,6 +82,8 @@ public OnAnticheatCheck()
 
 		GetPlayerHealth(playerid, health); // Gets client-side health.
 		GetPlayerArmour(playerid, armor); // Gets client-side armor.
+
+		printf("%f %f", velX, velY);
 
 		if(PlayerHealth[playerid] != health || PlayerArmor[playerid] != armor)
 		{
@@ -90,15 +93,13 @@ public OnAnticheatCheck()
 		{
 			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
 		}
-		else 
+		for(new j = 0; j < 12; j++)
 		{
-			for(new j = 0; j < 12; j++)
+			GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
+			if(PlayerWeapons[playerid][j][0] != weapon || PlayerWeapons[playerid][j][1] != ammo) // If the client-side and server-side doesn't match...
 			{
-				GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
-				if(PlayerWeapons[playerid][j][0] != weapon || PlayerWeapons[playerid][j][1] != ammo) // If the client-side and server-side doesn't match...
-				{
-					OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
-				}
+				printf("%i/%i, %i/%i", PlayerWeapons[playerid][j][0], weapon, PlayerWeapons[playerid][j][1], ammo);
+				OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
 			}
 		}
 	}
@@ -136,12 +137,11 @@ public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypar
 
 	if(armor < amount)
 	{
-		PlayerArmor[playerid] = 0.0;
-
 		new Float:hamount = amount - armor;
-		PlayerHealth[playerid] = hamount;
+		SetPlayerArmorEx(playerid, 0.0);
+		SetPlayerHealthEx(playerid, hamount);
 	}
-	else PlayerArmor[playerid] = armor - amount;
+	else SetPlayerArmorEx(playerid, armor - amount);
 	return 1;
 }
 forward AC_OnPlayerWeaponShot(playerid, weaponid);
