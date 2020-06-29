@@ -83,13 +83,13 @@ public OnAnticheatCheck()
 		GetPlayerHealth(playerid, health); // Gets client-side health.
 		GetPlayerArmour(playerid, armor); // Gets client-side armor.
 
+		printf("%i %i", GetPlayerMoney (playerid), PlayerMoney[playerid]);
 		if(PlayerHealth[playerid] != health || PlayerArmor[playerid] != armor)
 		{
 			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
 		}
 		if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
 		{
-			printf("%i %i", GetPlayerMoney (playerid), PlayerMoney[playerid]);
 			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
 		}
 		for(new j = 0; j < 12; j++)
@@ -121,7 +121,7 @@ public AC_OnPlayerConnect(playerid)
 	PlayerMoney[playerid] = 0;
 
 	PlayerHealth[playerid] = 100.0;
-	PlayerHealth[playerid] = 0.0;
+	PlayerArmor[playerid] = 0.0;
 
 	IsDead[playerid] = 0;
 	return 1;
@@ -156,10 +156,10 @@ public AC_OnPlayerDeath(playerid)
 forward AC_OnPlayerSpawn(playerid);
 public AC_OnPlayerSpawn(playerid)
 {
-	if(IsDead[playerid] == 1)
-	{
-		IsDead[playerid] = 0;
-	}
+	SetPlayerHealthEx(playerid, 100.0);
+	SetPlayerArmorEx(playerid, 0.0);
+
+	IsDead[playerid] = 0;
 	return 1;
 }
 /*
@@ -173,7 +173,12 @@ stock GivePlayerMoneyEx (playerid, money)
 	GivePlayerMoney (playerid, money);
 	return 1;
 }
-
+stock SetPlayerMoney(playerid, money)
+{
+	PlayerMoney[playerid] = money;
+	GivePlayerMoney(playerid, money - GetPlayerMoney(playerid));
+	return 1;
+}
 
 // Weapons
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
