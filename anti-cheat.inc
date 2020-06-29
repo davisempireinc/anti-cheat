@@ -83,8 +83,8 @@ public OnAnticheatCheck()
 		GetPlayerHealth(playerid, health); // Gets client-side health.
 		GetPlayerArmour(playerid, armor); // Gets client-side armor.
 
-		printf("%i %i", GetPlayerMoney (playerid), PlayerMoney[playerid]);
-		if(PlayerHealth[playerid] != health || PlayerArmor[playerid] != armor)
+		if((floatround(PlayerHealth[playerid], floatround_round) != floatround(health, floatround_round)) || 
+			(floatround(PlayerArmor[playerid], floatround_round) != floatround(armor, floatround_round)))
 		{
 			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
 		}
@@ -97,7 +97,6 @@ public OnAnticheatCheck()
 			GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
 			if(PlayerWeapons[playerid][j][0] != weapon || PlayerWeapons[playerid][j][1] != ammo) // If the client-side and server-side doesn't match...
 			{
-				printf("%i/%i, %i/%i", PlayerWeapons[playerid][j][0], weapon, PlayerWeapons[playerid][j][1], ammo);
 				OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
 			}
 		}
@@ -134,8 +133,14 @@ public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypar
 	GetPlayerArmour(playerid, armor);
 	GetPlayerHealth(playerid, health);
 
-	PlayerHealth[playerid] = health;
-	PlayerArmor[playerid] = armor;
+	if(armor < amount)
+	{
+		PlayerArmor[playerid] = 0.0;
+
+		new Float:hamount = PlayerHealth[playerid] - (amount - armor);
+		PlayerHealth[playerid] = hamount;
+	}
+	else PlayerArmor[playerid] = armor - amount;
 	return 1;
 }
 forward AC_OnPlayerWeaponShot(playerid, weaponid);
@@ -158,6 +163,7 @@ public AC_OnPlayerSpawn(playerid)
 {
 	SetPlayerHealthEx(playerid, 100.0);
 	SetPlayerArmorEx(playerid, 0.0);
+	ResetPlayerWeapons(playerid);
 
 	IsDead[playerid] = 0;
 	return 1;
@@ -184,8 +190,12 @@ stock SetPlayerMoney(playerid, money)
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
 {
 	new slot = GetWeaponSlot(weapon);
-	PlayerWeapons[playerid][slot][0] = weapon;
-	PlayerWeapons[playerid][slot][1] = ammo;
+	if(PlayerWeapons[playerid][slot][0] == weapon) PlayerWeapons[playerid][slot][1] += ammo;
+	else 
+	{
+		PlayerWeapons[playerid][slot][0] = weapon;
+		PlayerWeapons[playerid][slot][1] = ammo;
+	}
 	GivePlayerWeapon(playerid, weapon, ammo);
 	return 1;
 }
