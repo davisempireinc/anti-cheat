@@ -10,6 +10,7 @@
 #define AC_CHEAT_MONEY	      		0
 #define AC_CHEAT_WEAPONS 			1
 #define AC_CHEAT_HEALTH_ARMOR		2
+#define AC_CHEAT_POSITION			3
 
 forward OnAnticheatDetect(playerid, cheatid);
 
@@ -18,7 +19,8 @@ new AC_names[][] = // Holds names for the Anti-cheat.
 {
 	"Money hack",
 	"Weapon/Ammo hack",
-	"Health/Armor hack"
+	"Health/Armor hack",
+	"TP/Speed hack"
 };
 
 // Server-sided variables.
@@ -30,6 +32,7 @@ new PlayerWeapons[MAX_PLAYERS][12][2]; // Server-sided player weapons
 new Float:PlayerHealth[MAX_PLAYERS]; // Server-sided player weapons
 new Float:PlayerArmor[MAX_PLAYERS]; // Server-sided player health.
 
+new Float:PlayerPosition[MAX_PLAYERS][3]; // Server-sided player position.
 
 GetWeaponSlot(weaponid)
 {
@@ -75,6 +78,7 @@ public OnAnticheatCheck()
 
 	new weapon, ammo;// Used to get weapon data.
 	new Float:health, Float:armor; // Used to get client-side health & armor.
+	new Float:X, Float:Y, Float:Z; // Used to get client-side position.
 
 	for(new playerid = 0; playerid < MAX_PLAYERS; playerid++)
 	{
@@ -91,6 +95,25 @@ public OnAnticheatCheck()
 		if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
 		{
 			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
+		}
+		if((!IsPlayerInRangeOfPoint(playerid, 20.0, 
+			PlayerPosition[playerid][0], 
+			PlayerPosition[playerid][1], 
+			PlayerPosition[playerid][2]) && !IsPlayerInAnyVehicle(playerid)) || 
+
+			(!IsPlayerInRangeOfPoint(playerid, 70.0, 
+			PlayerPosition[playerid][0], 
+			PlayerPosition[playerid][1], 
+			PlayerPosition[playerid][2])) && IsPlayerInAnyVehicle(playerid))
+		{
+			OnAnticheatDetect (playerid, AC_CHEAT_POSITION);
+		}
+		else
+		{
+			GetPlayerPos(playerid, X, Y, Z); // Gets client-side position.
+			PlayerPosition[playerid][0] = X;
+			PlayerPosition[playerid][1] = Y;
+			PlayerPosition[playerid][2] = Z;
 		}
 		for(new j = 0; j < 12; j++)
 		{
@@ -148,6 +171,11 @@ public AC_OnPlayerWeaponShot(playerid, weaponid)
 {
 	new slot = GetWeaponSlot(weaponid);
 	PlayerWeapons[playerid][slot][1]--;
+
+	if(PlayerWeapons[playerid][slot][1] == 0)
+	{
+		RemovePlayerWeapon(playerid, weaponid);
+	}
 	return 1;
 }
 
@@ -221,5 +249,15 @@ stock SetPlayerArmorEx(playerid, Float:armor)
 {
 	SetPlayerArmour(playerid, armor);
 	PlayerArmor[playerid] = armor;
+	return 1;
+}
+
+// Position
+stock SetPlayerPosEx(playerid, Float:X, Float:Y, Float:Z)
+{
+	PlayerPosition[playerid][0] = X;
+	PlayerPosition[playerid][1] = Y;
+	PlayerPosition[playerid][2] = Z;
+	SetPlayerPos(playerid, X, Y, Z);
 	return 1;
 }
