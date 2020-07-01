@@ -118,9 +118,10 @@ public OnAnticheatCheck()
 		for(new j = 0; j < 12; j++)
 		{
 			GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
-			if(PlayerWeapons[playerid][j][0] != weapon || PlayerWeapons[playerid][j][1] != ammo) // If the client-side and server-side doesn't match...
+			if(PlayerWeapons[playerid][j][0] != weapon || (PlayerWeapons[playerid][j][1] > ammo + 4 && PlayerWeapons[playerid][j][1] < ammo - 4)) // If the client-side and server-side doesn't match...
 			{
 				OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
+				break;
 			}
 		}
 	}
@@ -152,9 +153,8 @@ public AC_OnPlayerConnect(playerid)
 forward AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart);
 public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart)
 {
-	new Float:armor, Float:health;
+	new Float:armor;
 	GetPlayerArmour(playerid, armor);
-	GetPlayerHealth(playerid, health);
 
 	if(armor < amount)
 	{
@@ -234,6 +234,20 @@ stock ResetPlayerWeaponsEx(playerid)
 	{
 		PlayerWeapons[playerid][slot][0] = 0;
 		PlayerWeapons[playerid][slot][1] = 0;
+	}
+	return 1;
+}
+stock RemovePlayerWeapon(playerid, weapon)
+{
+	new weapons[13][2];
+	for (new i = 0; i <= 12; i++)
+	{
+	    GetPlayerWeaponData(playerid, i, weapons[i][0], weapons[i][1]);
+	}
+	ResetPlayerWeaponsEx(playerid);
+	for(new i = 0; i <= 12; i++)
+	{
+		if(weapons[i][0] != weapon) GivePlayerWeaponEx(playerid, weapons[i][0], weapons[i][1]);
 	}
 	return 1;
 }
