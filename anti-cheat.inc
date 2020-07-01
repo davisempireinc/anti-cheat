@@ -89,8 +89,7 @@ public OnAnticheatCheck()
 		GetPlayerHealth(playerid, health); // Gets client-side health.
 		GetPlayerArmour(playerid, armor); // Gets client-side armor.
 
-		if((floatround(PlayerHealth[playerid], floatround_round) != floatround(health, floatround_round)) || 
-			(floatround(PlayerArmor[playerid], floatround_round) != floatround(armor, floatround_round)))
+		if((PlayerHealth[playerid] > health + 1.0 || PlayerHealth[playerid] < health - 1.0) || (PlayerArmor[playerid] < armor - 1.0 && PlayerArmor[playerid] > armor + 1.0))
 		{
 			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
 		}
@@ -120,10 +119,9 @@ public OnAnticheatCheck()
 		for(new j = 0; j < 12; j++)
 		{
 			GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
-			if(PlayerWeapons[playerid][j][0] != weapon || (PlayerWeapons[playerid][j][1] > ammo + 4 && PlayerWeapons[playerid][j][1] < ammo - 4)) // If the client-side and server-side doesn't match...
+			if(PlayerWeapons[playerid][j][0] != weapon || (PlayerWeapons[playerid][j][1] > ammo + 4 || PlayerWeapons[playerid][j][1] < ammo - 4)) // If the client-side and server-side doesn't match...
 			{
 				OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
-				break;
 			}
 		}
 	}
@@ -155,17 +153,26 @@ public AC_OnPlayerConnect(playerid)
 forward AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart);
 public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart)
 {
-	new Float:armor;
+	new Float:armor, Float:health;
 	GetPlayerArmour(playerid, armor);
+	GetPlayerHealth(playerid, health);
 
-	if(armor < amount)
+	if(weaponid == WEAPON_COLLISION)
 	{
-		PlayerArmor[playerid] = 0.0;
-
-		new Float:hamount = PlayerHealth[playerid] - (amount - armor);
-		PlayerHealth[playerid] = hamount;
+		PlayerHealth[playerid] = health - amount;
 	}
-	else PlayerArmor[playerid] = armor - amount;
+	else 
+	{
+		if(armor < amount)
+		{
+			SetPlayerArmour(playerid, 0.0);
+			PlayerArmor[playerid] = 0;
+
+			new Float:hamount = amount - armor;
+			PlayerHealth[playerid] = health - hamount;
+		}
+		else SetPlayerArmour(playerid, armor - amount);
+	}
 	return 1;
 }
 forward AC_OnPlayerWeaponShot(playerid, weaponid);
