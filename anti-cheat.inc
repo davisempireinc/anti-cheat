@@ -7,10 +7,13 @@
 */
 // Defining cheat ID's
 
-#define AC_CHEAT_MONEY	      		0
+#define AC_CHEAT_MONEY	      			0
 #define AC_CHEAT_WEAPONS 			1
-#define AC_CHEAT_HEALTH_ARMOR		2
+#define AC_CHEAT_HEALTH_ARMOR			2
 #define AC_CHEAT_POSITION			3
+#define AC_CHEAT_FLOOD_1			4
+
+#define FLOOD_LIMIT 27
 
 forward OnAnticheatDetect(playerid, cheatid);
 
@@ -27,6 +30,9 @@ new AC_names[][] = // Holds names for the Anti-cheat.
 
 // Server-sided variables.
 new IsDead[MAX_PLAYERS];
+
+new WeaponShot [MAX_PLAYERS];
+new FloodTimer [MAX_PLAYERS];
 
 new PlayerMoney [MAX_PLAYERS]; // Server-sided player money.
 new PlayerWeapons[MAX_PLAYERS][12][2]; // Server-sided player weapons
@@ -150,6 +156,17 @@ public AC_OnPlayerConnect(playerid)
 	return 1;
 }
 
+forward AC_OnPlayerDisconnect (playerid);
+public AC_OnPlayerDisconnect (playerid)
+{
+	if (WeaponShot [playerid])
+	{
+		WeaponShot [playerid] = 0;
+		KillTimer (FloodTimer [playerid]);
+	}
+	return 1;
+}
+
 forward AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart);
 public AC_OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart)
 {
@@ -185,8 +202,37 @@ public AC_OnPlayerWeaponShot(playerid, weaponid)
 	{
 		RemovePlayerWeapon(playerid, weaponid);
 	}
+	
+	if (weaponid != 38)
+	{
+		if (WeaponShot [playerid] >= 1)
+		{
+			KillTimer (FloodTimer [playerid]);
+			FloodTimer [playerid] = SetTimerEx ("ResetFloodCheck", 40, false, "i", playerid);
+
+			WeaponShot [playerid]++;
+		}
+		else if (!WeaponShot [playerid])
+		{
+			WeaponShot [playerid] = 1;
+			FloodTimer [playerid] = SetTimerEx ("ResetFloodCheck", 40, false, "i", playerid);
+		}
+
+		if (WeaponShot [playerid] >= FLOOD_LIMIT)
+		{
+			OnAnticheatDetect (playerid, AC_CHEAT_FLOOD_1);
+		}
+	}
 	return 1;
 }
+
+forward ResetFloodCheck (playerid);
+public ResetFloodCheck (playerid)
+{
+	WeaponShot [playerid] = 0;
+	return 1;
+}
+
 
 forward AC_OnPlayerDeath(playerid);
 public AC_OnPlayerDeath(playerid)
