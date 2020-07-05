@@ -7,11 +7,8 @@
 */
 // Defining cheat ID's
 
-#define AC_CHEAT_MONEY	      			0
-#define AC_CHEAT_WEAPONS 			1
-#define AC_CHEAT_HEALTH_ARMOR			2
-#define AC_CHEAT_POSITION			3
-#define AC_CHEAT_FLOOD_1			4
+#define AC_CHEAT_POSITION			0
+#define AC_CHEAT_FLOOD_1			1
 
 #define FLOOD_LIMIT 27
 
@@ -20,16 +17,15 @@ forward OnAnticheatDetect(playerid, cheatid);
 new AC_timer; // Holds the timer for the Anti-cheat checking function.
 new AC_names[][] = // Holds names for the Anti-cheat.
 {
-	"Money hack",
-	"Weapon/Ammo hack",
-	"Health/Armor hack",
-	"TP/Speed hack"
+
+	"TP/Speed hack",
+	"Bullet flood hack"
 };
 
 #pragma unused AC_names
 
 // Server-sided variables.
-new IsDead[MAX_PLAYERS];
+new IsDisableAnticheat[MAX_PLAYERS];
 
 new WeaponShot [MAX_PLAYERS];
 new FloodTimer [MAX_PLAYERS];
@@ -81,29 +77,13 @@ public AC_OnGameModeExit()
 forward OnAnticheatCheck();
 public OnAnticheatCheck()
 {
-	// Checking happens here.
-	// Calls the OnAnticheatDetect() with the defined preprocessor ID for the cheat.
-
-	new weapon, ammo;// Used to get weapon data.
-	new Float:health, Float:armor; // Used to get client-side health & armor.
 	new Float:X, Float:Y, Float:Z; // Used to get client-side position.
-
-	for(new playerid = 0; playerid < MAX_PLAYERS; playerid++)
+	for(new playerid = 0, count = GetPlayerPoolSize(); playerid <= count; playerid++)
 	{
-		if(IsDead[playerid] == 1 || GetPVarInt(playerid, "ready") != 1) continue;
-
-		GetPlayerHealth(playerid, health); // Gets client-side health.
-		GetPlayerArmour(playerid, armor); // Gets client-side armor.
-
-		if((PlayerHealth[playerid] > health + 1.0 || PlayerHealth[playerid] < health - 1.0) || (PlayerArmor[playerid] < armor - 1.0 && PlayerArmor[playerid] > armor + 1.0))
+		if(IsDisableAnticheat[playerid] != 1)
 		{
-			OnAnticheatDetect(playerid, AC_CHEAT_HEALTH_ARMOR);
-		}
-		if (GetPlayerMoney (playerid) != PlayerMoney [playerid]) // Checks if the client-side and server-side money doesn't match.
-		{
-			OnAnticheatDetect (playerid, AC_CHEAT_MONEY);
-		}
-		if((!IsPlayerInRangeOfPoint(playerid, 20.0, 
+			GetPlayerPos(playerid, X, Y, Z);
+			if((!IsPlayerInRangeOfPoint(playerid, 20.0, 
 			PlayerPosition[playerid][0], 
 			PlayerPosition[playerid][1], 
 			PlayerPosition[playerid][2]) && !IsPlayerInAnyVehicle(playerid)) || 
@@ -112,22 +92,40 @@ public OnAnticheatCheck()
 			PlayerPosition[playerid][0], 
 			PlayerPosition[playerid][1], 
 			PlayerPosition[playerid][2])) && IsPlayerInAnyVehicle(playerid))
-		{
-			OnAnticheatDetect (playerid, AC_CHEAT_POSITION);
+			{
+				OnAnticheatDetect (playerid, AC_CHEAT_POSITION);
+			}
+			else
+			{
+				GetPlayerPos(playerid, X, Y, Z); // Gets client-side position.
+				PlayerPosition[playerid][0] = X;
+				PlayerPosition[playerid][1] = Y;
+				PlayerPosition[playerid][2] = Z;
+			}
 		}
-		else
-		{
-			GetPlayerPos(playerid, X, Y, Z); // Gets client-side position.
-			PlayerPosition[playerid][0] = X;
-			PlayerPosition[playerid][1] = Y;
-			PlayerPosition[playerid][2] = Z;
-		}
+	}
+	return 1;
+}
+
+forward AC_OnPlayerUpdate(playerid);
+public AC_OnPlayerUpdate(playerid)
+{
+	// Checking happens here.
+	// Calls the OnAnticheatDetect() with the defined preprocessor ID for the cheat.
+
+	new weapon, ammo;// Used to get weapon data.
+	if(IsDisableAnticheat[playerid] != 1)
+	{
+		GivePlayerMoney(playerid, PlayerMoney[playerid] - GetPlayerMoney(playerid));
+		SetPlayerHealth(playerid, PlayerHealth[playerid]);
+		SetPlayerArmour(playerid, PlayerArmor[playerid]);
+
 		for(new j = 0; j < 12; j++)
 		{
 			GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
 			if(PlayerWeapons[playerid][j][0] != weapon || (PlayerWeapons[playerid][j][1] > ammo + 4 || PlayerWeapons[playerid][j][1] < ammo - 4)) // If the client-side and server-side doesn't match...
 			{
-				OnAnticheatDetect(playerid, AC_CHEAT_WEAPONS);
+				RemovePlayerWeapon(playerid, weapon);
 			}
 		}
 	}
@@ -152,7 +150,7 @@ public AC_OnPlayerConnect(playerid)
 	PlayerHealth[playerid] = 100.0;
 	PlayerArmor[playerid] = 0.0;
 
-	IsDead[playerid] = 0;
+	TogglePlayerAnticheat(playerid, false);
 	return 1;
 }
 
@@ -229,7 +227,7 @@ public AC_OnPlayerWeaponShot(playerid, weaponid)
 forward ResetFloodCheck (playerid);
 public ResetFloodCheck (playerid)
 {
-	WeaponShot [playerid] = 0;
+	WeaponShot[playerid] = 0;
 	return 1;
 }
 
@@ -237,7 +235,7 @@ public ResetFloodCheck (playerid)
 forward AC_OnPlayerDeath(playerid);
 public AC_OnPlayerDeath(playerid)
 {
-	IsDead[playerid] = 1;
+	TogglePlayerAnticheat(playerid, false);
 	return 1;
 }
 
@@ -247,31 +245,36 @@ public AC_OnPlayerSpawn(playerid)
 	SetPlayerHealthEx(playerid, 100.0);
 	SetPlayerArmorEx(playerid, 0.0);
 	ResetPlayerWeapons(playerid);
-
-	IsDead[playerid] = 0;
 	return 1;
 }
 /*
 	Functions needed for each Anti-cheat.
 */
 
+// General
+stock TogglePlayerAnticheat(playerid, bool:toggle)
+{
+	if(toggle) IsDisableAnticheat[playerid] = 0;
+	else IsDisableAnticheat[playerid] = 1;
+	return 1;
+}
+
 // Money
 stock GivePlayerMoneyEx (playerid, money) 
 {
 	PlayerMoney[playerid] += money;
-	GivePlayerMoney (playerid, money);
 	return 1;
 }
 stock SetPlayerMoney(playerid, money)
 {
 	PlayerMoney[playerid] = money;
-	GivePlayerMoney(playerid, money - GetPlayerMoney(playerid));
 	return 1;
 }
 
 // Weapons
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
 {
+	TogglePlayerAnticheat(playerid, false);
 	new slot = GetWeaponSlot(weapon);
 	if(PlayerWeapons[playerid][slot][0] == weapon) PlayerWeapons[playerid][slot][1] += ammo;
 	else 
@@ -280,20 +283,24 @@ stock GivePlayerWeaponEx(playerid, weapon, ammo)
 		PlayerWeapons[playerid][slot][1] = ammo;
 	}
 	GivePlayerWeapon(playerid, weapon, ammo);
+	TogglePlayerAnticheat(playerid, true);
 	return 1;
 }
 stock ResetPlayerWeaponsEx(playerid)
 {
+	TogglePlayerAnticheat(playerid, false);
 	ResetPlayerWeapons(playerid);
 	for(new slot = 0; slot < 12; slot++)
 	{
 		PlayerWeapons[playerid][slot][0] = 0;
 		PlayerWeapons[playerid][slot][1] = 0;
 	}
+	TogglePlayerAnticheat(playerid, true);
 	return 1;
 }
 stock RemovePlayerWeapon(playerid, weapon)
 {
+	TogglePlayerAnticheat(playerid, false);
 	new weapons[13][2];
 	for (new i = 0; i <= 12; i++)
 	{
@@ -304,19 +311,18 @@ stock RemovePlayerWeapon(playerid, weapon)
 	{
 		if(weapons[i][0] != weapon) GivePlayerWeaponEx(playerid, weapons[i][0], weapons[i][1]);
 	}
+	TogglePlayerAnticheat(playerid, true);
 	return 1;
 }
 
 // Health/Armor
 stock SetPlayerHealthEx(playerid, Float:health)
 {
-	SetPlayerHealth(playerid, health);
 	PlayerHealth[playerid] = health;
 	return 1;
 }
 stock SetPlayerArmorEx(playerid, Float:armor)
 {
-	SetPlayerArmour(playerid, armor);
 	PlayerArmor[playerid] = armor;
 	return 1;
 }
@@ -324,18 +330,9 @@ stock SetPlayerArmorEx(playerid, Float:armor)
 // Position
 stock SetPlayerPosEx(playerid, Float:X, Float:Y, Float:Z)
 {
-	IsDead[playerid] = 1;
 	PlayerPosition[playerid][0] = X;
 	PlayerPosition[playerid][1] = Y;
 	PlayerPosition[playerid][2] = Z;
 	SetPlayerPos(playerid, X, Y, Z);
-	SetTimerEx("RemoveDead", 500, false, "i", playerid);
-	return 1;
-}
-
-forward RemoveDead(playerid);
-public RemoveDead(playerid)
-{
-	IsDead[playerid] = 0;
 	return 1;
 }
