@@ -124,9 +124,24 @@ public AC_OnPlayerUpdate(playerid)
 		for(new j = 0; j < 12; j++)
 		{
 			GetPlayerWeaponData(playerid, j, weapon, ammo); // Gets the client-sided weapon.
-			if(PlayerWeapons[playerid][j][0] != weapon || (PlayerWeapons[playerid][j][1] > ammo + 4 || PlayerWeapons[playerid][j][1] < ammo - 4)) // If the client-side and server-side doesn't match...
+			if(PlayerWeapons[playerid][j][0] != weapon) // If the client-side and server-side doesn't match...
 			{
-				RemovePlayerWeapon(playerid, weapon);
+				if(PlayerWeapons[playerid][j][0] == 0)
+				{
+					ResetPlayerWeapon(playerid);
+					for(new i = 0; i <= 12; i++)
+					{
+						if(PlayerWeapon[playerid][i][0] != weapon) GivePlayerWeaponEx(playerid, weapons[i][0], weapons[i][1]);
+					}
+				}
+				else
+				{
+					GivePlayerWeapon(playerid, PlayerWeapons[playerid][j][0], PlayerWeapons[playerid][j][1]);
+				}
+			} 
+			else if(PlayerWeapons[playerid][j][1] > ammo + 4 || PlayerWeapons[playerid][j][1] < ammo - 4)
+			{
+				SetPlayerAmmo(playerid, j, PlayerWeapons[playerid][j][1]);
 			}
 		}
 	}
@@ -288,44 +303,30 @@ stock SetPlayerMoney(playerid, money)
 // Weapons
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
 {
-	TogglePlayerAnticheat(playerid, false);
-	new slot = GetWeaponSlot(weapon);
 	if(PlayerWeapons[playerid][slot][0] == weapon) PlayerWeapons[playerid][slot][1] += ammo;
 	else 
 	{
 		PlayerWeapons[playerid][slot][0] = weapon;
 		PlayerWeapons[playerid][slot][1] = ammo;
 	}
-	GivePlayerWeapon(playerid, weapon, ammo);
-	TogglePlayerAnticheat(playerid, true);
 	return 1;
 }
 stock ResetPlayerWeaponsEx(playerid)
 {
-	TogglePlayerAnticheat(playerid, false);
-	ResetPlayerWeapons(playerid);
 	for(new slot = 0; slot < 12; slot++)
 	{
 		PlayerWeapons[playerid][slot][0] = 0;
 		PlayerWeapons[playerid][slot][1] = 0;
 	}
-	TogglePlayerAnticheat(playerid, true);
 	return 1;
 }
 stock RemovePlayerWeapon(playerid, weapon)
 {
-	TogglePlayerAnticheat(playerid, false);
-	new weapons[13][2];
-	for (new i = 0; i <= 12; i++)
-	{
-	    GetPlayerWeaponData(playerid, i, weapons[i][0], weapons[i][1]);
-	}
-	ResetPlayerWeaponsEx(playerid);
+	ResetPlayerWeapon(playerid);
 	for(new i = 0; i <= 12; i++)
 	{
-		if(weapons[i][0] != weapon) GivePlayerWeaponEx(playerid, weapons[i][0], weapons[i][1]);
+		if(PlayerWeapon[playerid][i][0] != weapon) GivePlayerWeaponEx(playerid, weapons[i][0], weapons[i][1]);
 	}
-	TogglePlayerAnticheat(playerid, true);
 	return 1;
 }
 
