@@ -7,11 +7,10 @@
 */
 // Defining cheat ID's
 
-#include <mapandreas>
-
 #define AC_CHEAT_POSITION			0
 #define AC_CHEAT_FLOOD_1			1
 #define AC_CHEAT_FLYING				2
+#define AC_CHEAT_SPEED				3
 
 #define FLOOD_LIMIT 27
 
@@ -29,6 +28,7 @@ new AC_names[][] = // Holds names for the Anti-cheat.
 
 // Server-sided variables.
 new IsDisableAnticheat[MAX_PLAYERS];
+new IsDetected[MAX_PLAYERS];
 
 new WeaponShot [MAX_PLAYERS];
 new FloodTimer [MAX_PLAYERS];
@@ -67,7 +67,6 @@ forward AC_OnGameModeInit();
 public AC_OnGameModeInit()
 {
 	AC_timer = SetTimer("OnAnticheatCheck", 1000, true); // Starting the timer.
-	MapAndreas_Init(MAP_ANDREAS_MODE_MINIMAL);
 	return 1;
 }
 
@@ -82,37 +81,27 @@ forward OnAnticheatCheck();
 public OnAnticheatCheck()
 {
 	new Float:X, Float:Y, Float:Z, Float:minZ; // Used to get client-side position.
+	new Float:velX, Float:velY, Float:velZ; // Used to get the speed of the player.
 	for(new playerid = 0, count = GetPlayerPoolSize(); playerid <= count; playerid++)
 	{
-		if(IsDisableAnticheat[playerid] != 1)
-		{
-			GetPlayerPos(playerid, X, Y, Z);
-			if(GetPlayerVehicleID(playerid) == 0)
-			{
-				MapAndreas_FindZ_For2DCoord(X, Y, minZ);
-				if(Z - minZ >= 4.0)
-				{
-					OnAnticheatDetect (playerid, AC_CHEAT_FLYING);
-				}
-			}
-			if((!IsPlayerInRangeOfPoint(playerid, 20.0, 
-			PlayerPosition[playerid][0], 
-			PlayerPosition[playerid][1], 
-			PlayerPosition[playerid][2]) && !IsPlayerInAnyVehicle(playerid)) || 
 
-			(!IsPlayerInRangeOfPoint(playerid, 70.0, 
-			PlayerPosition[playerid][0], 
-			PlayerPosition[playerid][1], 
-			PlayerPosition[playerid][2])) && IsPlayerInAnyVehicle(playerid))
+		if(IsDetected[playerid] == 0)
+		{
+			if(IsDisableAnticheat[playerid] != 1)
 			{
-				OnAnticheatDetect (playerid, AC_CHEAT_POSITION);
-			}
-			else
-			{
-				GetPlayerPos(playerid, X, Y, Z); // Gets client-side position.
-				PlayerPosition[playerid][0] = X;
-				PlayerPosition[playerid][1] = Y;
-				PlayerPosition[playerid][2] = Z;
+				GetPlayerPos(playerid, X, Y, Z);
+				if(GetPlayerVehicleID(playerid) == 0)
+				{
+					CA_FindZ_For2DCoord(X, Y, minZ);
+					GetPlayerVelocity(playerid, velX, velY, velZ);
+					if(Z - minZ >= 5.0 && GetPlayerInterior(playerid) == 0)
+					{
+						OnAnticheatDetect (playerid, AC_CHEAT_FLYING);
+						IsDetected[playerid] = 1;
+						SetTimerEx("UndetectPlayer", 10000, false, "i", playerid);			
+					}
+				}
+				
 			}
 		}
 	}
@@ -144,6 +133,13 @@ public AC_OnPlayerUpdate(playerid)
 	return 1;
 }
 
+forward UndetectPlayer(playerid);
+public UndetectPlayer(playerid)
+{
+	IsDetected[playerid] = 0;
+	return 1;
+}
+
 /*
 	Server events.
 	You're able to create hooks for any event listener. E.g: AC_OnPlayerConnect.
@@ -162,6 +158,8 @@ public AC_OnPlayerConnect(playerid)
 	PlayerHealth[playerid] = 100.0;
 	PlayerArmor[playerid] = 0.0;
 
+	IsDetected[playerid] = 0;
+
 	TogglePlayerAnticheat(playerid, false);
 	return 1;
 }
@@ -174,6 +172,7 @@ public AC_OnPlayerDisconnect (playerid)
 		WeaponShot [playerid] = 0;
 		KillTimer (FloodTimer [playerid]);
 	}
+	IsDetected[playerid] = 0;
 	return 1;
 }
 
@@ -257,6 +256,8 @@ public AC_OnPlayerSpawn(playerid)
 	SetPlayerHealthEx(playerid, 100.0);
 	SetPlayerArmorEx(playerid, 0.0);
 	ResetPlayerWeapons(playerid);
+
+	IsDetected[playerid] = 0;
 	return 1;
 }
 /*
@@ -268,6 +269,7 @@ stock TogglePlayerAnticheat(playerid, bool:toggle)
 {
 	if(toggle) IsDisableAnticheat[playerid] = 0;
 	else IsDisableAnticheat[playerid] = 1;
+	IsDetected[playerid] = 0;
 	return 1;
 }
 
