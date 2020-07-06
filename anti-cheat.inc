@@ -7,8 +7,11 @@
 */
 // Defining cheat ID's
 
+#include <mapandreas>
+
 #define AC_CHEAT_POSITION			0
 #define AC_CHEAT_FLOOD_1			1
+#define AC_CHEAT_FLYING				2
 
 #define FLOOD_LIMIT 27
 
@@ -17,9 +20,9 @@ forward OnAnticheatDetect(playerid, cheatid);
 new AC_timer; // Holds the timer for the Anti-cheat checking function.
 new AC_names[][] = // Holds names for the Anti-cheat.
 {
-
 	"TP/Speed hack",
-	"Bullet flood hack"
+	"Bullet flood hack",
+	"Flying hack"
 };
 
 #pragma unused AC_names
@@ -64,6 +67,7 @@ forward AC_OnGameModeInit();
 public AC_OnGameModeInit()
 {
 	AC_timer = SetTimer("OnAnticheatCheck", 1000, true); // Starting the timer.
+	MapAndreas_Init(MAP_ANDREAS_MODE_MINIMAL);
 	return 1;
 }
 
@@ -77,12 +81,20 @@ public AC_OnGameModeExit()
 forward OnAnticheatCheck();
 public OnAnticheatCheck()
 {
-	new Float:X, Float:Y, Float:Z; // Used to get client-side position.
+	new Float:X, Float:Y, Float:Z, Float:minZ; // Used to get client-side position.
 	for(new playerid = 0, count = GetPlayerPoolSize(); playerid <= count; playerid++)
 	{
 		if(IsDisableAnticheat[playerid] != 1)
 		{
 			GetPlayerPos(playerid, X, Y, Z);
+			if(GetPlayerVehicleID(playerid) == 0)
+			{
+				MapAndreas_FindZ_For2DCoord(X, Y, minZ);
+				if(Z - minZ >= 4.0)
+				{
+					OnAnticheatDetect (playerid, AC_CHEAT_FLYING);
+				}
+			}
 			if((!IsPlayerInRangeOfPoint(playerid, 20.0, 
 			PlayerPosition[playerid][0], 
 			PlayerPosition[playerid][1], 
