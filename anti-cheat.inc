@@ -128,11 +128,7 @@ public AC_OnPlayerUpdate(playerid)
 			{
 				if(PlayerWeapons[playerid][j][0] == 0)
 				{
-					ResetPlayerWeapon(playerid);
-					for(new i = 0; i <= 12; i++)
-					{
-						if(PlayerWeapon[playerid][i][0] != weapon) GivePlayerWeaponEx(playerid, weapons[i][0], weapons[i][1]);
-					}
+					RemovePlayerWeapon(playerid, weapon);
 				}
 				else
 				{
@@ -303,6 +299,7 @@ stock SetPlayerMoney(playerid, money)
 // Weapons
 stock GivePlayerWeaponEx(playerid, weapon, ammo)
 {
+	new slot = GetWeaponSlot(weapon);
 	if(PlayerWeapons[playerid][slot][0] == weapon) PlayerWeapons[playerid][slot][1] += ammo;
 	else 
 	{
@@ -320,16 +317,27 @@ stock ResetPlayerWeaponsEx(playerid)
 	}
 	return 1;
 }
-stock RemovePlayerWeapon(playerid, weapon)
+RemovePlayerWeapon(playerid, weapon)
 {
-	ResetPlayerWeapon(playerid);
+	new weapons[13][2];
+	for (new i = 0; i <= 12; i++)
+	{
+	    GetPlayerWeaponData(playerid, i, weapons[i][0], weapons[i][1]);
+	}
+	ResetPlayerWeapons(playerid);
 	for(new i = 0; i <= 12; i++)
 	{
-		if(PlayerWeapon[playerid][i][0] != weapon) GivePlayerWeaponEx(playerid, weapons[i][0], weapons[i][1]);
+		if(weapons[i][0] != weapon) GivePlayerWeapon(playerid, weapons[i][0], weapons[i][1]);
 	}
 	return 1;
 }
-
+stock RemovePlayerWeaponEx(playerid, weapon)
+{
+	new slot = GetWeaponSlot(weapon);
+	PlayerWeapons[playerid][slot][0] = 0;
+	PlayerWeapons[playerid][slot][1] = 0;
+	return 1;
+}
 // Health/Armor
 stock SetPlayerHealthEx(playerid, Float:health)
 {
