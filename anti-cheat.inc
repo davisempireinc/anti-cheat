@@ -94,7 +94,7 @@ public OnAnticheatCheck()
 				{
 					CA_FindZ_For2DCoord(X, Y, minZ);
 					GetPlayerVelocity(playerid, velX, velY, velZ);
-					if(Z - minZ >= 5.0 && GetPlayerInterior(playerid) == 0)
+					if(Z - minZ >= 5.0 && GetPlayerInterior(playerid) == 0 && velX == 0.0 && velY == 0.0 && velZ >= 0.0)
 					{
 						OnAnticheatDetect (playerid, AC_CHEAT_FLYING);
 						IsDetected[playerid] = 1;
