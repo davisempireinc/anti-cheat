@@ -7,7 +7,6 @@
 */
 // Defining cheat ID's
 
-#define AC_CHEAT_POSITION			0
 #define AC_CHEAT_FLOOD_1			1
 #define AC_CHEAT_FLYING				2
 #define AC_CHEAT_SPEED				3
@@ -19,9 +18,9 @@ forward OnAnticheatDetect(playerid, cheatid);
 new AC_timer; // Holds the timer for the Anti-cheat checking function.
 new AC_names[][] = // Holds names for the Anti-cheat.
 {
-	"TP/Speed hack",
 	"Bullet flood hack",
-	"Flying hack"
+	"Flying hack",
+	"Speed hack"
 };
 
 #pragma unused AC_names
@@ -94,11 +93,17 @@ public OnAnticheatCheck()
 				{
 					CA_FindZ_For2DCoord(X, Y, minZ);
 					GetPlayerVelocity(playerid, velX, velY, velZ);
-					if(Z - minZ >= 5.0 && GetPlayerInterior(playerid) == 0 && velX == 0.0 && velY == 0.0 && velZ >= 0.0)
+					if(Z - minZ >= 5.0 && GetPlayerInterior(playerid) == 0 && (velX * velX + velY * velY) > 5.0 && velZ >= 0.0)
 					{
 						OnAnticheatDetect (playerid, AC_CHEAT_FLYING);
 						IsDetected[playerid] = 1;
 						SetTimerEx("UndetectPlayer", 10000, false, "i", playerid);			
+					}
+					if((velX * velX + velY * velY) >= 20.0)
+					{
+						OnAnticheatDetect (playerid, AC_CHEAT_SPEED);
+						IsDetected[playerid] = 1;
+						SetTimerEx("UndetectPlayer", 10000, false, "i", playerid);	
 					}
 				}
 				
